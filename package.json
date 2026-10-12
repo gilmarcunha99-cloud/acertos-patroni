@@ -7,6 +7,7 @@
     "test": "node --test \"test/**/*.test.js\"",
     "migrate": "node --use-system-ca scripts/migrate.js",
     "seed": "node --use-system-ca scripts/seed.js",
+    "dev:local": "node scripts/dev-local.js",
     "icons": "node scripts/gen-icons.js",
     "dev": "vercel dev"
   },
