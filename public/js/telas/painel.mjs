@@ -1,6 +1,7 @@
 import { h, moeda, corSaldo, confirmar, toast } from '../ui.mjs';
 import { api } from '../api.mjs';
 import { nomeDoMes } from '../cobranca.mjs';
+import { parseBRL, formatBRL } from '../money.mjs';
 import { escolherYm, seletorMes, rotuloLancamento } from './seletor-mes.mjs';
 
 const dm = (iso) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
@@ -30,13 +31,30 @@ export async function render(estado) {
     toast(`${mes} fechado`); window.dispatchEvent(new Event('hashchange'));
   };
 
+  const ajustarSaldo = () => {
+    const valor = h('input', { inputmode: 'decimal', value: formatBRL(v.saldo_inicial_centavos), placeholder: '-16,23' });
+    const salvar = h('button', { onclick: async () => {
+      const c = parseBRL(valor.value);
+      if (c === null) return toast('Informe um valor válido');
+      salvar.disabled = true;
+      try { await api('PUT', `/api/meses/${ym}/saldo-inicial`, { saldo_inicial_centavos: c }); d.close(); window.dispatchEvent(new Event('hashchange')); }
+      catch (e) { salvar.disabled = false; toast(e.message); }
+    } }, 'Salvar');
+    const d = h('dialog', {}, h('h3', {}, 'Saldo do banco no início'),
+      h('label', {}, 'Valor (R$, pode ser negativo)'), valor,
+      h('div', { class: 'acoes' }, h('button', { class: 'sec', onclick: () => d.close() }, 'Cancelar'), salvar));
+    d.addEventListener('close', () => d.remove());
+    document.body.append(d); d.showModal();
+  };
+
   return h('div', {},
     h('div', { class: 'topo' }, h('h1', {}, 'Painel'), seletorMes(estado, meses, ym)),
     h('div', { class: 'card' },
       h('div', { class: 'suave' }, v.status === 'FECHADO' ? 'Mês fechado' : 'Mês aberto · aportes provisórios'),
       h('div', { class: 'suave' }, 'Saldo ao fim do mês'),
       h('div', { class: `grande ${corSaldo(v.totais.saldo_final)}` }, `R$ ${moeda(v.totais.saldo_final)}`),
-      h('div', { class: 'suave' }, `Saldo do banco no início: R$ ${moeda(v.saldo_inicial_centavos)}`)),
+      h('div', { class: 'suave' }, `Saldo do banco no início: R$ ${moeda(v.saldo_inicial_centavos)} `,
+        admin && v.status === 'ABERTO' ? h('a', { href: '#', onclick: (ev) => { ev.preventDefault(); ajustarSaldo(); } }, 'ajustar') : null)),
     h('div', { class: 'grade' },
       h('div', { class: 'card' }, h('div', { class: 'suave' }, 'Débitos'), h('b', {}, moeda(v.totais.debitos))),
       h('div', { class: 'card' }, h('div', { class: 'suave' }, 'Aportes'), h('b', {}, moeda(v.totais.aportes)))),

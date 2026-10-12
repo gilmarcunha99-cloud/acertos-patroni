@@ -22,7 +22,7 @@ function montarNav(ativa) {
   const nav = document.getElementById('nav');
   nav.hidden = !estado.user;
   nav.replaceChildren(...ABAS.map((k) => h('a', { href: `#/${k}`, class: k === ativa ? 'ativo' : '' }, TELAS[k][1])));
-  if (estado.user && estado.user.perfil === 'ADMIN') {
+  if (estado.user) {
     nav.append(h('a', { href: '#/mais', class: ['mais', 'socios', 'usuarios'].includes(ativa) ? 'ativo' : '' }, 'Mais'));
   }
 }
@@ -51,8 +51,8 @@ async function rotearUma() {
     montarNav('mais');
     return app.replaceChildren(h('div', {},
       h('div', { class: 'topo' }, h('h1', {}, 'Mais')),
-      h('a', { class: 'btn largo card', href: '#/socios' }, 'Sócios e percentuais'),
-      h('a', { class: 'btn largo card', href: '#/usuarios' }, 'Usuários'),
+      estado.user.perfil === 'ADMIN' ? h('a', { class: 'btn largo card', href: '#/socios' }, 'Sócios e percentuais') : null,
+      estado.user.perfil === 'ADMIN' ? h('a', { class: 'btn largo card', href: '#/usuarios' }, 'Usuários') : null,
       h('button', { class: 'sec largo', onclick: async () => {
         try { await api('POST', '/api/logout'); } catch { toast('Não foi possível sair. Verifique a conexão.'); return; }
         try { await caches.delete('api'); } catch { /* sem cache */ }
