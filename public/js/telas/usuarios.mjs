@@ -21,11 +21,11 @@ export async function render(estado) {
   };
   const formulario = (u) => {
     const nome = h('input', { value: u ? u.nome : '' });
-    const email = h('input', { type: 'email', value: u ? u.email : '' });
+    const email = h('input', { type: 'text', autocapitalize: 'none', autocorrect: 'off', spellcheck: 'false', placeholder: 'e-mail ou nome de usuário', value: u ? u.email : '' });
     const perfil = h('select', {}, [['SOCIO', 'Sócio (somente consulta)'], ['ADMIN', 'Administrador']].map(([v, t]) => h('option', { value: v, selected: u && u.perfil === v }, t)));
     const senha = h('input', { type: 'password', autocomplete: 'new-password', placeholder: u ? 'deixe em branco para manter' : 'mínimo 8 caracteres' });
     const ativo = h('select', {}, [[true, 'Ativo'], [false, 'Inativo']].map(([v, t]) => h('option', { value: String(v), selected: u ? u.ativo === v : v }, t)));
-    const campos = [h('label', {}, 'Nome'), nome, h('label', {}, 'E-mail'), email, h('label', {}, 'Perfil'), perfil, h('label', {}, 'Senha'), senha];
+    const campos = [h('label', {}, 'Nome'), nome, h('label', {}, 'Login (e-mail ou nome de usuário)'), email, h('label', {}, 'Perfil'), perfil, h('label', {}, 'Senha'), senha];
     if (u) campos.push(h('label', {}, 'Situação'), ativo);
     dialogo(u ? `Editar ${u.nome}` : 'Novo usuário', campos, () => {
       const corpo = { nome: nome.value, email: email.value, perfil: perfil.value };

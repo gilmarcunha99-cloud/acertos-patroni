@@ -6,7 +6,7 @@ const PERFIS = ['ADMIN', 'SOCIO'];
 
 function validar(b, { criando }) {
   if (criando || b.nome !== undefined) if (!String(b.nome || '').trim()) fail(400, 'Informe o nome.');
-  if (criando || b.email !== undefined) if (!/^\S+@\S+$/.test(String(b.email || ''))) fail(400, 'Informe um e-mail válido.');
+  if (criando || b.email !== undefined) if (!/^\S{2,80}$/.test(String(b.email || '').trim())) fail(400, 'Informe o login (e-mail ou nome de usuário, sem espaços).');
   if (criando || b.perfil !== undefined) if (!PERFIS.includes(b.perfil)) fail(400, 'Perfil inválido.');
   if (criando || b.senha !== undefined) if (String(b.senha || '').length < 8) fail(400, 'A senha precisa ter ao menos 8 caracteres.');
 }
@@ -28,12 +28,12 @@ async function protegerUltimoAdmin(id, alvoDepois) {
 
 async function emailLivre(email, exceto) {
   const r = await query('SELECT id FROM usuario WHERE lower(email) = lower($1) AND id <> $2', [email, exceto || 0]);
-  if (r.length) fail(409, 'Já existe um usuário com esse e-mail.');
+  if (r.length) fail(409, 'Já existe um usuário com esse login.');
 }
 
 async function gravar(sql, params) {
   try { return await query(sql, params); } catch (e) {
-    if (/unique|duplicate/i.test(e.message)) fail(409, 'Já existe um usuário com esse e-mail.');
+    if (/unique|duplicate/i.test(e.message)) fail(409, 'Já existe um usuário com esse login.');
     throw e;
   }
 }
