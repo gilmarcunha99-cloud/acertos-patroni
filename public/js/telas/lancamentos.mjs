@@ -1,9 +1,9 @@
-import { h, moeda } from '../ui.mjs';
+import { h, moeda, caixaData, icone } from '../ui.mjs';
 import { api } from '../api.mjs';
 import { escolherYm, seletorMes, rotuloLancamento } from './seletor-mes.mjs';
 
-const dm = (iso) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 const ROTULO = { A_PAGAR: ['a pagar', 'aviso'], PAGO: ['pago', 'ok'], A_RECEBER: ['a receber', 'aviso'], RECEBIDO: ['recebido', 'ok'] };
+const FORMA = { BOLETO: 'Boleto', GUIA: 'Guia', PIX: 'PIX', OUTRO: 'Outro' };
 
 export async function render(estado) {
   const meses = await api('GET', '/api/meses');
@@ -12,33 +12,38 @@ export async function render(estado) {
   const v = await api('GET', `/api/meses/${ym}`);
   const admin = estado.user.perfil === 'ADMIN' && v.status === 'ABERTO';
   let filtro = 'TODOS';
-  const lista = h('div', { class: 'card' });
+  const lista = h('div', { class: 'card lista' });
 
-  const linhaSaldo = (rotulo, sub, valorTxt, saldo, onclick) => h('div', { class: 'linha', onclick, style: onclick ? 'cursor:pointer' : '' },
-    h('span', {}, rotulo, h('br'), h('span', { class: 'suave' }, sub)),
-    h('span', { style: 'text-align:right' }, valorTxt, h('br'), h('span', { class: `suave ${saldo < 0 ? 'neg' : ''}` }, `saldo ${moeda(saldo)}`)));
+  const linha = ({ data, titulo, tags, valor, saldo, credito, abrir }) => h('div', {
+    class: 'linha', role: abrir ? 'button' : false, tabindex: abrir ? '0' : false, onclick: abrir,
+    onkeydown: abrir ? (ev) => { if (ev.key === 'Enter') abrir(); } : null,
+  },
+  caixaData(data),
+  h('div', { class: 'textos' }, h('b', {}, titulo), h('div', { class: 'tags' }, tags)),
+  h('div', { class: 'valor' }, h('b', { class: credito ? 'pos' : '' }, valor),
+    saldo === null ? null : h('span', { class: `suave ${saldo < 0 ? 'neg' : ''}` }, `saldo ${moeda(saldo)}`)));
 
   const desenhar = () => {
-    const itens = [
-      h('div', { class: 'linha' }, h('span', {}, 'Saldo banco', h('br'), h('span', { class: 'suave' }, 'saldo inicial')),
-        h('span', { class: v.saldo_inicial_centavos < 0 ? 'neg' : '' }, moeda(v.saldo_inicial_centavos))),
+    lista.replaceChildren(
+      linha({ data: `${ym}-01`, titulo: 'Saldo do banco', tags: [h('span', { class: 'tag' }, 'saldo inicial')],
+        valor: moeda(v.saldo_inicial_centavos), saldo: null }),
       ...v.lancamentos.filter((l) => filtro === 'TODOS' || l.tipo === filtro).map((l) => {
         const [txt, cls] = ROTULO[l.status];
-        return linhaSaldo(rotuloLancamento(l),
-          [dm(l.vencimento), ' · ', l.forma, ' ', h('span', { class: `tag ${cls}` }, txt)],
-          (l.tipo === 'CREDITO' ? '+' : '') + moeda(l.valor_centavos), l.saldo_centavos,
-          admin ? () => { location.hash = `#/lancamento/${l.id}`; } : null);
+        return linha({ data: l.vencimento, titulo: rotuloLancamento(l),
+          tags: [h('span', { class: 'tag' }, FORMA[l.forma] || l.forma), h('span', { class: `tag ${cls}` }, txt)],
+          valor: (l.tipo === 'CREDITO' ? '+' : '') + moeda(l.valor_centavos), saldo: l.saldo_centavos, credito: l.tipo === 'CREDITO',
+          abrir: admin ? () => { location.hash = `#/lancamento/${l.id}`; } : null });
       }),
-      ...(filtro !== 'DEBITO' ? v.aportes.map((a) => linhaSaldo(`Aporte ${a.nome} (${a.bp / 100}%)`,
-        [dm(a.vencimento), ' · PIX ', h('span', { class: `tag ${a.status === 'PAGO' ? 'ok' : 'aviso'}` }, v.provisorio ? 'provisório' : (a.status === 'PAGO' ? 'recebido' : 'a receber'))],
-        `+${moeda(a.final_centavos)}`, a.saldo_centavos, null)) : []),
-    ];
-    lista.replaceChildren(...itens);
+      ...(filtro !== 'DEBITO' ? v.aportes.map((a) => linha({ data: a.vencimento, titulo: `Aporte ${a.nome} · ${String(a.bp / 100).replace('.', ',')}%`,
+        tags: [h('span', { class: 'tag' }, 'PIX'), v.provisorio ? h('span', { class: 'tag' }, 'provisório')
+          : h('span', { class: `tag ${a.status === 'PAGO' ? 'ok' : 'aviso'}` }, a.status === 'PAGO' ? 'recebido' : 'a receber')],
+        valor: `+${moeda(a.final_centavos)}`, saldo: a.saldo_centavos, credito: true })) : []),
+    );
   };
-  const chip = (rotulo, valor) => h('span', { class: 'chip', onclick: (ev) => {
+  const chip = (rotulo, valor) => h('button', { type: 'button', class: 'chip', 'aria-pressed': valor === filtro ? 'true' : 'false', onclick: (ev) => {
     filtro = valor;
-    ev.target.parentNode.querySelectorAll('.chip').forEach((c) => c.classList.remove('sel'));
-    ev.target.classList.add('sel'); desenhar();
+    ev.currentTarget.parentNode.querySelectorAll('.chip').forEach((c) => { c.classList.remove('sel'); c.setAttribute('aria-pressed', 'false'); });
+    ev.currentTarget.classList.add('sel'); ev.currentTarget.setAttribute('aria-pressed', 'true'); desenhar();
   } }, rotulo);
   const chips = h('div', { class: 'chips' }, chip('Todos', 'TODOS'), chip('Débitos', 'DEBITO'), chip('Créditos', 'CREDITO'));
   chips.firstChild.classList.add('sel');
@@ -46,6 +51,6 @@ export async function render(estado) {
 
   return h('div', {},
     h('div', { class: 'topo' }, h('h1', {}, 'Lançamentos'), seletorMes(estado, meses, ym)),
-    chips, h('div', { style: 'height:10px' }), lista,
-    admin ? h('button', { class: 'fab', 'aria-label': 'Novo lançamento', onclick: () => { location.hash = `#/lancamento/novo?ym=${ym}`; } }, '+') : null);
+    chips, lista,
+    admin ? h('button', { class: 'fab', 'aria-label': 'Novo lançamento', onclick: () => { location.hash = `#/lancamento/novo?ym=${ym}`; } }, icone('mais_sinal', 28)) : null);
 }

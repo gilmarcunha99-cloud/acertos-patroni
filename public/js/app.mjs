@@ -1,4 +1,4 @@
-import { h, toast } from './ui.mjs';
+import { h, toast, icone } from './ui.mjs';
 import { api } from './api.mjs';
 
 const estado = { user: null, ym: null, irPara: (hash) => { location.hash = hash; } };
@@ -7,10 +7,10 @@ export function guardarYm(ym) { estado.ym = ym; try { localStorage.setItem('ym',
 estado.guardarYm = guardarYm;
 
 const TELAS = {
-  painel: ['painel.mjs', 'Painel', 'ti-home'],
-  lancamentos: ['lancamentos.mjs', 'Lançamentos', 'ti-list'],
-  aportes: ['aportes.mjs', 'Aportes', 'ti-users'],
-  meses: ['meses.mjs', 'Meses', 'ti-calendar'],
+  painel: ['painel.mjs', 'Painel', 'inicio'],
+  lancamentos: ['lancamentos.mjs', 'Lançamentos', 'lista'],
+  aportes: ['aportes.mjs', 'Aportes', 'socios'],
+  meses: ['meses.mjs', 'Meses', 'calendario'],
   socios: ['socios.mjs', 'Sócios', null],
   usuarios: ['usuarios.mjs', 'Usuários', null],
   lancamento: ['lancamento-form.mjs', 'Lançamento', null],
@@ -21,10 +21,11 @@ const ABAS = ['painel', 'lancamentos', 'aportes', 'meses'];
 function montarNav(ativa) {
   const nav = document.getElementById('nav');
   nav.hidden = !estado.user;
-  nav.replaceChildren(...ABAS.map((k) => h('a', { href: `#/${k}`, class: k === ativa ? 'ativo' : '' }, TELAS[k][1])));
-  if (estado.user) {
-    nav.append(h('a', { href: '#/mais', class: ['mais', 'socios', 'usuarios'].includes(ativa) ? 'ativo' : '' }, 'Mais'));
-  }
+  const aba = (href, ativo, nomeIcone, rotulo) =>
+    h('a', { href, class: ativo ? 'ativo' : '', 'aria-current': ativo ? 'page' : false }, icone(nomeIcone, 22), rotulo);
+  const destino = ativa === 'lancamento' ? 'lancamentos' : ativa === 'exportar' ? 'meses' : ativa;
+  nav.replaceChildren(...ABAS.map((k) => aba(`#/${k}`, k === destino, TELAS[k][2], TELAS[k][1])));
+  if (estado.user) nav.append(aba('#/mais', ['mais', 'socios', 'usuarios'].includes(ativa), 'mais', 'Mais'));
 }
 
 let rotando = false;
@@ -49,15 +50,18 @@ async function rotearUma() {
   }
   if (nome === 'mais') {
     montarNav('mais');
+    const item = (href, nomeIcone, rotulo) => h('a', { class: 'btn largo card', href }, icone(nomeIcone), h('span', { style: 'flex:1' }, rotulo), icone('seta', 20));
     return app.replaceChildren(h('div', {},
       h('div', { class: 'topo' }, h('h1', {}, 'Mais')),
-      estado.user.perfil === 'ADMIN' ? h('a', { class: 'btn largo card', href: '#/socios' }, 'Sócios e percentuais') : null,
-      estado.user.perfil === 'ADMIN' ? h('a', { class: 'btn largo card', href: '#/usuarios' }, 'Usuários') : null,
+      h('div', { class: 'card' }, h('div', { class: 'rotulo' }, 'Conectado como'), h('b', {}, estado.user.nome),
+        h('div', { class: 'suave' }, estado.user.perfil === 'ADMIN' ? 'Administrador' : 'Sócio · somente consulta')),
+      estado.user.perfil === 'ADMIN' ? item('#/socios', 'socios', 'Sócios e percentuais') : null,
+      estado.user.perfil === 'ADMIN' ? item('#/usuarios', 'usuario', 'Usuários') : null,
       h('button', { class: 'sec largo', onclick: async () => {
         try { await api('POST', '/api/logout'); } catch { toast('Não foi possível sair. Verifique a conexão.'); return; }
         try { await caches.delete('api'); } catch { /* sem cache */ }
         estado.user = null; location.hash = '#/'; rotear();
-      } }, 'Sair')));
+      } }, icone('sair', 20), 'Sair')));
   }
   const def = TELAS[nome] || TELAS.painel;
   montarNav(nome);

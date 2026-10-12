@@ -1,4 +1,4 @@
-import { h, moeda, toast, confirmar } from '../ui.mjs';
+import { h, moeda, toast, confirmar, caixaData } from '../ui.mjs';
 import { api } from '../api.mjs';
 import { parseBRL } from '../money.mjs';
 import { nomeDoMes } from '../cobranca.mjs';
@@ -33,11 +33,15 @@ export async function render(estado) {
 
   return h('div', {},
     h('div', { class: 'topo' }, h('h1', {}, 'Meses'), admin ? h('button', { onclick: abrir }, meses.length ? `Abrir ${nomeDoMes(proximoYm(meses[0].ym))}` : 'Abrir mês') : null),
-    h('div', { class: 'card' }, meses.length ? meses.map((m, i) => h('div', { class: 'linha' },
-      h('span', {}, h('a', { href: '#/painel', onclick: () => estado.guardarYm(m.ym) }, nomeDoMes(m.ym)), h('br'), h('span', { class: 'suave' }, `débitos ${moeda(m.debitos)}`)),
-      h('span', {}, h('span', { class: `tag ${m.status === 'FECHADO' ? 'ok' : 'aviso'}` }, m.status === 'FECHADO' ? 'fechado' : 'aberto'), ' ',
-        h('a', { href: '#/exportar', onclick: () => estado.guardarYm(m.ym) }, 'exportar'),
-        admin && i === 0 && m.status === 'FECHADO' ? [' ', h('a', { href: '#/meses', onclick: (ev) => { ev.preventDefault(); reabrir(m.ym); } }, 'reabrir')] : null)))
+    h('div', { class: 'card lista' }, meses.length ? meses.map((m, i) => h('div', { class: 'linha' },
+      caixaData(`${m.ym}-01`),
+      h('div', { class: 'textos' },
+        h('a', { href: '#/painel', class: 'titulo', onclick: () => estado.guardarYm(m.ym) }, nomeDoMes(m.ym)),
+        h('span', { class: 'suave' }, `débitos R$ ${moeda(m.debitos)}`),
+        h('div', { class: 'tags' },
+          h('a', { href: '#/exportar', onclick: () => estado.guardarYm(m.ym) }, 'exportar'),
+          admin && i === 0 && m.status === 'FECHADO' ? h('a', { href: '#/meses', onclick: (ev) => { ev.preventDefault(); reabrir(m.ym); } }, 'reabrir') : null)),
+      h('div', { class: 'valor' }, h('span', { class: `tag ${m.status === 'FECHADO' ? 'ok' : 'aviso'}` }, m.status === 'FECHADO' ? 'fechado' : 'aberto'))))
       : h('p', { class: 'suave' }, 'Nenhum mês ainda.')),
     h('p', { class: 'suave' }, 'Ao abrir um mês, o app copia os lançamentos fixos e parcelados (avançando a parcela) e leva o saldo final como saldo inicial.'));
 }

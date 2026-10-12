@@ -40,19 +40,30 @@ export async function render(estado) {
     catch { toast('Não foi possível copiar'); }
   };
 
+  const pct = (bp) => `${String(bp / 100).replace('.', ',')}%`;
+  const iniciais = (nome) => nome.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+  const situacao = (a) => {
+    if (v.provisorio) return h('span', { class: 'tag' }, 'provisório');
+    const pago = a.status === 'PAGO';
+    const rotulo = pago ? 'pago' : 'pendente';
+    return admin
+      ? h('button', { type: 'button', class: `tag ${pago ? 'ok' : 'aviso'} tag-botao`, 'aria-label': `${a.nome}: ${rotulo}. Tocar para marcar como ${pago ? 'pendente' : 'pago'}`, onclick: () => alternarPago(a) }, rotulo)
+      : h('span', { class: `tag ${pago ? 'ok' : 'aviso'}` }, rotulo);
+  };
+
   return h('div', {},
     h('div', { class: 'topo' }, h('h1', {}, 'Aportes'), seletorMes(estado, meses, ym)),
-    h('div', { class: 'card' }, h('div', { class: 'suave' }, v.provisorio ? 'Total a aportar (provisório)' : 'Total a aportar'),
-      h('div', { class: 'grande' }, moeda(v.totais.aportes)),
-      v.totais.diferenca !== 0 ? h('div', { class: 'suave neg' }, `Diferença para o valor a cobrir: ${moeda(v.totais.diferenca)}`) : null),
-    h('div', { class: 'card' }, v.aportes.length ? v.aportes.map((a) => h('div', { class: 'linha' },
-      h('span', {}, `${a.nome} · ${a.bp / 100}%`, h('br'), h('span', { class: 'suave' }, `vence ${dm(a.vencimento)}`),
-        a.ajuste_centavos ? h('br') : null,
-        a.ajuste_centavos ? h('span', { class: 'suave' }, `acerto ${moeda(a.ajuste_centavos)}: ${a.ajuste_motivo}`) : null),
-      h('span', { style: 'text-align:right' }, moeda(a.final_centavos), h('br'),
-        v.provisorio ? h('span', { class: 'tag' }, 'provisório')
-          : h('span', { class: `tag ${a.status === 'PAGO' ? 'ok' : 'aviso'}`, style: admin ? 'cursor:pointer' : '', onclick: admin ? () => alternarPago(a) : null }, a.status === 'PAGO' ? 'pago' : 'pendente'),
-        admin && v.status === 'ABERTO' ? [h('br'), h('a', { href: '#/aportes', onclick: (ev) => { ev.preventDefault(); editarAjuste(a); } }, 'acerto')] : null)))
+    h('div', { class: 'card' },
+      h('div', { class: 'tags' }, h('span', { class: 'rotulo' }, 'Total a aportar'), v.provisorio ? h('span', { class: 'tag aviso' }, 'provisório') : null),
+      h('div', { class: 'grande' }, `R$ ${moeda(v.totais.aportes)}`),
+      v.totais.diferenca !== 0 ? h('div', { class: 'suave neg' }, `Diferença para o valor a cobrir: R$ ${moeda(v.totais.diferenca)}`) : null),
+    h('div', { class: 'card lista' }, v.aportes.length ? v.aportes.map((a) => h('div', { class: 'linha' },
+      h('div', { class: 'inicial', 'aria-hidden': 'true' }, iniciais(a.nome)),
+      h('div', { class: 'textos' }, h('b', {}, `${a.nome} · ${pct(a.bp)}`),
+        h('span', { class: 'suave' }, `vence ${dm(a.vencimento)}`),
+        a.ajuste_centavos ? h('span', { class: 'suave' }, `acerto R$ ${moeda(a.ajuste_centavos)}: ${a.ajuste_motivo}`) : null,
+        admin && v.status === 'ABERTO' ? h('a', { href: '#/aportes', onclick: (ev) => { ev.preventDefault(); editarAjuste(a); } }, a.ajuste_centavos ? 'editar acerto' : 'lançar acerto') : null),
+      h('div', { class: 'valor' }, h('b', {}, moeda(a.final_centavos)), situacao(a))))
       : h('p', { class: 'suave' }, 'Defina os percentuais dos sócios em Mais → Sócios.')),
     h('button', { class: 'largo', onclick: copiar }, 'Copiar cobrança para o WhatsApp'));
 }

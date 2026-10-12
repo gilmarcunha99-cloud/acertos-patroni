@@ -1,10 +1,10 @@
-import { h, moeda, corSaldo, confirmar, toast } from '../ui.mjs';
+import { h, moeda, corSaldo, confirmar, toast, caixaData } from '../ui.mjs';
 import { api } from '../api.mjs';
 import { nomeDoMes } from '../cobranca.mjs';
 import { parseBRL, formatBRL } from '../money.mjs';
 import { escolherYm, seletorMes, rotuloLancamento } from './seletor-mes.mjs';
 
-const dm = (iso) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+const FORMA = { BOLETO: 'Boleto', GUIA: 'Guia', PIX: 'PIX', OUTRO: 'Outro' };
 
 export async function render(estado) {
   const meses = await api('GET', '/api/meses');
@@ -50,21 +50,23 @@ export async function render(estado) {
   return h('div', {},
     h('div', { class: 'topo' }, h('h1', {}, 'Painel'), seletorMes(estado, meses, ym)),
     h('div', { class: 'card' },
-      h('div', { class: 'suave' }, v.status === 'FECHADO' ? 'Mês fechado' : 'Mês aberto · aportes provisórios'),
-      h('div', { class: 'suave' }, 'Saldo ao fim do mês'),
+      h('div', { class: 'tags' }, h('span', { class: 'rotulo' }, 'Saldo ao fim do mês'),
+        v.status === 'FECHADO' ? h('span', { class: 'tag ok' }, 'mês fechado') : h('span', { class: 'tag aviso' }, 'provisório')),
       h('div', { class: `grande ${corSaldo(v.totais.saldo_final)}` }, `R$ ${moeda(v.totais.saldo_final)}`),
-      h('div', { class: 'suave' }, `Saldo do banco no início: R$ ${moeda(v.saldo_inicial_centavos)} `,
-        admin && v.status === 'ABERTO' ? h('a', { href: '#', onclick: (ev) => { ev.preventDefault(); ajustarSaldo(); } }, 'ajustar') : null)),
-    h('div', { class: 'grade' },
-      h('div', { class: 'card' }, h('div', { class: 'suave' }, 'Débitos'), h('b', {}, moeda(v.totais.debitos))),
-      h('div', { class: 'card' }, h('div', { class: 'suave' }, 'Aportes'), h('b', {}, moeda(v.totais.aportes)))),
+      h('div', { class: 'suave' }, `Banco no início: R$ ${moeda(v.saldo_inicial_centavos)} `,
+        admin && v.status === 'ABERTO' ? [' · ', h('a', { href: '#', onclick: (ev) => { ev.preventDefault(); ajustarSaldo(); } }, 'ajustar')] : null),
+      h('div', { class: 'tres' },
+        h('div', {}, h('span', { class: 'suave' }, 'Débitos'), h('b', {}, moeda(v.totais.debitos))),
+        h('div', {}, h('span', { class: 'suave' }, 'A cobrir'), h('b', {}, moeda(v.totais.a_cobrir))),
+        h('div', {}, h('span', { class: 'suave' }, 'Aportes'), h('b', {}, moeda(v.totais.aportes))))),
     v.status === 'FECHADO' ? h('div', { class: 'card' },
-      h('div', { class: 'suave' }, 'Aportes recebidos'),
+      h('div', { class: 'rotulo' }, 'Aportes recebidos'),
       h('div', { class: 'barra' }, h('b', { style: `width:${v.totais.aportes ? Math.round(recebido * 100 / v.totais.aportes) : 0}%` })),
       h('div', { class: 'suave' }, `${pagos} de ${v.aportes.length} sócios · ${moeda(recebido)} de ${moeda(v.totais.aportes)}`)) : null,
-    h('div', { class: 'card' }, h('div', { class: 'suave' }, 'Próximos vencimentos'),
+    h('div', { class: 'card lista' }, h('div', { class: 'rotulo', style: 'padding-top:12px' }, 'Próximos vencimentos'),
       proximos.length ? proximos.map((l) => h('div', { class: 'linha' },
-        h('span', {}, rotuloLancamento(l), h('br'), h('span', { class: 'suave' }, `${dm(l.vencimento)} · ${l.forma}`)),
-        h('span', {}, moeda(l.valor_centavos)))) : h('p', { class: 'suave' }, 'Nada a pagar.')),
+        caixaData(l.vencimento),
+        h('div', { class: 'textos' }, h('b', {}, rotuloLancamento(l)), h('span', { class: 'tag' }, FORMA[l.forma] || l.forma)),
+        h('div', { class: 'valor' }, h('b', {}, moeda(l.valor_centavos))))) : h('p', { class: 'suave' }, 'Nada a pagar.')),
     admin && v.status === 'ABERTO' ? h('button', { class: 'largo', onclick: fechar }, 'Fechar mês') : null);
 }

@@ -1,34 +1,209 @@
-:root{--azul:#1f3a5f;--fundo:#f4f6f9;--card:#fff;--linha:#e3e7ee;--txt:#1b2430;--suave:#6a7587;--neg:#c0392b;--pos:#1e8449;--aviso:#b9770e}
-*{box-sizing:border-box}
-[hidden]{display:none!important}
-body{margin:0;font:16px/1.4 system-ui,sans-serif;background:var(--fundo);color:var(--txt);padding-bottom:calc(64px + env(safe-area-inset-bottom))}
-main{max-width:560px;margin:0 auto;padding:12px 16px}
-h1{font-size:20px;margin:0}
-.topo{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px}
-.card{background:var(--card);border:1px solid var(--linha);border-radius:10px;padding:12px;margin-bottom:10px}
-.grade{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.suave{color:var(--suave);font-size:13px}.neg{color:var(--neg)}.pos{color:var(--pos)}
-.grande{font-size:26px;font-weight:600}
-.linha{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--linha)}
-.linha:last-child{border-bottom:0}
-.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:8px;background:#e6edf7;color:var(--azul)}
-.tag.ok{background:#e3f4ea;color:var(--pos)}.tag.aviso{background:#fbf0dc;color:var(--aviso)}
-button,.btn{font:inherit;border:0;border-radius:8px;padding:12px 14px;background:var(--azul);color:#fff;min-height:44px;cursor:pointer}
-button.sec{background:#e6edf7;color:var(--azul)}button.perigo{background:var(--neg)}
-button.largo{width:100%}
-input,select,textarea{font:inherit;width:100%;padding:11px;border:1px solid var(--linha);border-radius:8px;background:#fff;min-height:44px}
-.campo-senha{position:relative}.campo-senha input{padding-right:84px}
-.mostrar-senha{position:absolute;right:4px;top:4px;min-height:36px;padding:6px 12px;background:#e6edf7;color:var(--azul);font-size:14px}
-label{display:block;font-size:13px;color:var(--suave);margin:10px 0 4px}
-.barra{height:8px;border-radius:4px;background:#dfe6f1;overflow:hidden}.barra b{display:block;height:100%;background:var(--azul)}
-#nav{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-around;background:#fff;border-top:1px solid var(--linha);padding:6px 0 calc(6px + env(safe-area-inset-bottom))}
-#nav a{flex:1;text-align:center;font-size:12px;color:var(--suave);text-decoration:none;padding:6px 0}
-#nav a.ativo{color:var(--azul);font-weight:600}
-.toast{position:fixed;left:16px;right:16px;bottom:80px;background:#1b2430;color:#fff;padding:12px;border-radius:8px;text-align:center}
-dialog{border:0;border-radius:12px;padding:16px;max-width:360px;width:calc(100% - 32px)}
-dialog::backdrop{background:rgba(0,0,0,.4)}
-.acoes{display:flex;gap:8px;margin-top:14px}.acoes>*{flex:1}
-.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{padding:8px 12px;border-radius:16px;background:#e6edf7;color:var(--azul);cursor:pointer}.chip.sel{background:var(--azul);color:#fff}
-.fab{position:fixed;right:16px;bottom:78px;border-radius:50%;width:56px;height:56px;font-size:28px;padding:0}
-.somente-impressao{display:none}
-@media print{#nav,.nao-imprime,.fab{display:none!important}body{background:#fff;padding:0}.somente-impressao{display:block}main{max-width:none}}
+/* Visual baseado no app do Condo·OS (mobile/www/app.css): medidas de 52 px em
+   campo e botão, 44 px de toque, raios de 12/14/16 px, cabeçalho branco e barra
+   de abas com marca da aba ativa. Para diferenciar, a marca é verde e o fundo é
+   cinza claro. Os nomes das variáveis dizem o PAPEL da cor, não o tom. */
+
+@font-face { font-family: "Plus Jakarta Sans"; font-style: normal; font-weight: 400; font-display: swap; src: url("/fonts/plus-jakarta-sans-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Plus Jakarta Sans"; font-style: normal; font-weight: 500; font-display: swap; src: url("/fonts/plus-jakarta-sans-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Plus Jakarta Sans"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fonts/plus-jakarta-sans-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Plus Jakarta Sans"; font-style: normal; font-weight: 700; font-display: swap; src: url("/fonts/plus-jakarta-sans-latin-700-normal.woff2") format("woff2"); }
+
+:root {
+  --marca: #1E5C3A;          /* botão principal, valores em destaque, aba ativa */
+  --marca-escuro: #164A2E;
+  --marca-claro: #E3F0E7;    /* fundo do quadradinho de data e de ícone */
+  --destaque: #3FA16A;       /* traço da aba ativa; nunca texto pequeno */
+  --fundo: #F1F3F2;          /* cinza claro */
+  --branco: #FFFFFF;
+  --texto: #1C2421;
+  --cinza: #5F6B66;          /* texto secundário: 5,2:1 sobre o fundo */
+  --borda: #DDE2DF;
+  --borda-campo: #C9D0CC;
+  --ok: #1E6B40;
+  --ok-claro: #E3F0E7;
+  --ambar: #8A5E14;
+  --ambar-claro: #F6EBD5;
+  --vermelho: #A33A32;
+  --vermelho-claro: #F6E0DD;
+  --neutro-claro: #EAEEEC;
+  --seguro-topo: env(safe-area-inset-top, 0px);
+  --seguro-base: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--fundo); color: var(--texto);
+  font: 15px/1.4 "Plus Jakarta Sans", system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  padding-bottom: calc(66px + var(--seguro-base));
+}
+button, input, select, textarea { font-family: inherit; }
+svg { flex: 0 0 auto; }
+a { color: var(--marca); font-weight: 600; text-decoration: none; }
+main { max-width: 560px; margin: 0 auto; padding: 0 16px 24px; }
+
+/* ---------- Cabeçalho da tela ---------- */
+.topo {
+  position: sticky; top: 0; z-index: 5;
+  margin: 0 -16px 16px; padding: calc(10px + var(--seguro-topo)) 16px 10px;
+  background: var(--branco); border-bottom: 1px solid var(--borda);
+  display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 60px;
+}
+h1 { margin: 0; font-size: 19px; font-weight: 700; }
+h2 { margin: 0 0 4px; font-size: 20px; font-weight: 700; }
+h3 { margin: 0 0 4px; font-size: 18px; font-weight: 700; }
+.topo a { padding: 10px 4px; }
+.topo button { min-height: 40px; height: 40px; padding: 0 14px; border-radius: 20px; font-size: 14px; }
+/* Círculo com as iniciais do sócio, como o avatar do Condo·OS. */
+.inicial {
+  width: 44px; height: 44px; flex: 0 0 auto; border-radius: 22px;
+  background: var(--marca-claro); color: var(--marca); font-weight: 700; font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+}
+.tag-botao { min-height: 32px; height: 32px; padding: 0 12px; border: 0; cursor: pointer; font-size: 12px; }
+a.titulo { font-size: 16px; }
+/* O mês vira um botão arredondado, como o seletor de condomínio do Condo·OS. */
+.topo select {
+  width: auto; max-width: 60%; min-height: 40px; height: 40px; padding: 0 34px 0 14px;
+  border: 1px solid var(--borda); border-radius: 20px; background-color: var(--fundo);
+  font-size: 14px; font-weight: 600; color: var(--texto);
+  -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235F6B66' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+
+/* ---------- Cartões e linhas ---------- */
+.card { background: var(--branco); border: 1px solid var(--borda); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+.card.lista { padding: 4px 16px; }
+.grade { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--borda); }
+.tres > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tres b { font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+.suave { color: var(--cinza); font-size: 13px; }
+.rotulo { color: var(--cinza); font-size: 14px; margin: 0 0 2px; }
+.neg { color: var(--vermelho); }
+.pos { color: var(--ok); }
+.grande { font-size: 28px; font-weight: 700; color: var(--marca); letter-spacing: .3px; margin: 2px 0; }
+.grande.neg { color: var(--vermelho); }
+.linha { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--borda); }
+.linha:last-child { border-bottom: 0; }
+.linha .textos { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.linha .textos > b, .linha .titulo { font-weight: 600; overflow-wrap: anywhere; }
+.linha .valor { text-align: right; display: flex; flex-direction: column; gap: 2px; align-items: flex-end; white-space: nowrap; }
+.linha .valor b { font-weight: 700; }
+.linha[role="button"] { cursor: pointer; }
+
+/* Quadradinho com dia e mês, como na Agenda do Condo·OS. */
+.data {
+  width: 48px; height: 48px; flex: 0 0 auto; border-radius: 12px;
+  background: var(--marca-claro); color: var(--marca);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.05;
+}
+.data b { font-size: 17px; font-weight: 700; }
+.data span { font-size: 11px; font-weight: 600; color: var(--cinza); text-transform: lowercase; }
+
+/* Etiquetas de situação (o "selo" do Condo·OS). */
+.tag { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 12px; font-size: 12px; font-weight: 600; background: var(--neutro-claro); color: var(--cinza); }
+.tag.ok { background: var(--ok-claro); color: var(--ok); }
+.tag.aviso { background: var(--ambar-claro); color: var(--ambar); }
+.tag.erro { background: var(--vermelho-claro); color: var(--vermelho); }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+.barra { height: 8px; border-radius: 4px; background: var(--neutro-claro); overflow: hidden; margin: 8px 0 6px; }
+.barra b { display: block; height: 100%; background: var(--marca); }
+
+/* ---------- Botões e campos ---------- */
+button, .btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font: inherit; font-size: 16px; font-weight: 600; border: 0; border-radius: 14px;
+  min-height: 52px; padding: 0 18px; background: var(--marca); color: var(--branco); cursor: pointer; text-decoration: none;
+}
+button.sec, .btn.sec { background: var(--branco); color: var(--marca); border: 1.5px solid var(--marca); }
+button.perigo { background: var(--vermelho); color: var(--branco); }
+button:disabled { opacity: .6; cursor: default; }
+button.largo, .btn.largo { width: 100%; }
+.btn.card { display: flex; justify-content: flex-start; background: var(--branco); color: var(--texto); border: 1px solid var(--borda); border-radius: 16px; min-height: 60px; padding: 0 16px; }
+.btn.card svg { color: var(--marca); }
+input, select, textarea {
+  font: inherit; font-size: 16px; width: 100%; min-height: 52px; padding: 0 14px;
+  border: 1.5px solid var(--borda-campo); border-radius: 12px; background: var(--branco); color: var(--texto);
+}
+textarea { padding: 12px 14px; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--marca); }
+label { display: block; font-size: 14px; font-weight: 600; color: var(--texto); margin: 14px 0 6px; }
+.campo-senha { position: relative; }
+.campo-senha input { padding-right: 56px; }
+.mostrar-senha {
+  position: absolute; right: 4px; top: 4px; min-height: 44px; width: 44px; padding: 0;
+  background: none; color: var(--cinza); border-radius: 10px;
+}
+.acoes { display: flex; gap: 10px; margin-top: 18px; }
+.acoes > * { flex: 1; }
+
+/* Filtros em pílula. */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.chip {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 22px;
+  font-size: 14px; font-weight: 600; background: var(--branco); color: var(--texto); border: 1px solid var(--borda-campo); cursor: pointer;
+}
+.chip.sel { background: var(--marca); color: var(--branco); border-color: var(--marca); }
+
+.fab {
+  position: fixed; right: 16px; bottom: calc(82px + var(--seguro-base)); z-index: 6;
+  width: 58px; height: 58px; min-height: 58px; padding: 0; border-radius: 18px;
+  box-shadow: 0 6px 18px rgba(30, 92, 58, .3);
+}
+main:has(.fab) { padding-bottom: 96px; }
+
+/* ---------- Login ---------- */
+.entrada { min-height: 100dvh; display: flex; flex-direction: column; gap: 28px; padding: calc(48px + var(--seguro-topo)) 8px 24px; }
+.marca { display: flex; align-items: center; gap: 12px; }
+.marca-icone { width: 48px; height: 48px; border-radius: 14px; background: var(--marca); color: var(--branco); display: flex; align-items: center; justify-content: center; }
+.marca-nome { font-size: 22px; font-weight: 700; }
+.entrada .sub { margin: 4px 0 0; color: var(--cinza); }
+.entrada form { display: flex; flex-direction: column; }
+.entrada form > button { margin-top: 24px; }
+
+/* ---------- Barra de abas ---------- */
+#nav {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 7;
+  display: flex; background: var(--branco); border-top: 1px solid var(--borda);
+  padding: 0 0 calc(4px + var(--seguro-base));
+}
+#nav a {
+  flex: 1; min-height: 60px; padding: 8px 0 6px; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  color: var(--cinza); font-size: 11px; font-weight: 500; text-decoration: none;
+}
+#nav a.ativo { color: var(--marca); font-weight: 700; box-shadow: inset 0 3px 0 var(--destaque); }
+
+/* ---------- Avisos e janelas ---------- */
+.toast {
+  position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); bottom: calc(84px + var(--seguro-base));
+  max-width: calc(100% - 32px); padding: 12px 18px; border-radius: 12px;
+  background: var(--texto); color: var(--branco); font-weight: 600; text-align: center;
+}
+/* As janelas abrem de baixo para cima, como as folhas do Condo·OS. */
+dialog {
+  border: 0; padding: 12px 20px calc(24px + var(--seguro-base)); margin: auto auto 0;
+  width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto;
+  border-radius: 20px 20px 0 0; background: var(--branco); color: var(--texto);
+}
+dialog::before { content: ""; display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--borda-campo); margin: 0 auto 14px; }
+dialog::backdrop { background: rgba(28, 36, 33, .45); }
+dialog p { color: var(--cinza); line-height: 1.5; }
+
+/* ---------- Exportar / impressão ---------- */
+.planilha { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--branco); }
+.planilha th, .planilha td { border: 1px solid #9AA59F; padding: 5px 6px; }
+.planilha th { background: var(--marca-claro); color: var(--marca-escuro); font-weight: 700; }
+.planilha td.num { text-align: right; white-space: nowrap; }
+.titulo-planilha { text-align: center; font-size: 17px; margin-bottom: 12px; }
+.rolagem-planilha { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.somente-impressao { display: none; }
+@media print {
+  #nav, .nao-imprime, .fab, .topo { display: none !important; }
+  body { background: #fff; padding: 0; } main { max-width: none; padding: 0; } .somente-impressao { display: block; }
+  .card { border: 0; padding: 0; } .rolagem-planilha { overflow: visible; }
+}
