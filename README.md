@@ -1,9 +1,47 @@
 # Acertos Patroni
 
-Aplicativo para acertos de contas entre o patrono e os envolvidos, com registro de lançamentos, cálculo dos saldos e acompanhamento do que ainda está em aberto.
+Aplicativo (PWA) de acertos financeiros mensais entre os sócios da Patroni: lançamentos de débitos e créditos do mês, saldo corrido, cálculo dos aportes de cada sócio pelo percentual vigente e acompanhamento de quem já pagou.
 
-O app roda na Vercel: as funções ficam em `api/` e as rotas são direcionadas para `api/index.js` pelo `vercel.json`. O banco é PostgreSQL, acessado pelo pacote `pg`.
+Node.js com funções na Vercel (`api/index.js`, rotas em `routes/`), banco PostgreSQL (Neon) acessado pelo pacote `pg` e telas em `public/` (JavaScript sem framework). Somente o perfil ADMIN escreve; o perfil SOCIO consulta.
 
-Testes: `npm test` (executa `node --test test/`).
+## Requisitos
+
+- Node.js 22 ou mais novo.
+- `npm install`
+
+## Testes
+
+```
+npm test
+```
+
+Executa `node --test "test/**/*.test.js"`. Os testes usam um banco PostgreSQL em memória (pg-mem); não precisam de internet nem de variáveis de ambiente.
+
+## Rodar localmente
+
+```
+npm run dev:local
+```
+
+Sobe um servidor local com banco em memória, escutando só em 127.0.0.1. As credenciais de teste são geradas a cada partida e gravadas em `.env.dev-local` (arquivo ignorado pelo Git). Os dados somem ao parar o servidor.
+
+## Publicar na Vercel
+
+1. Crie o projeto na Vercel apontando para este repositório.
+2. No projeto, abra Storage, escolha Neon pelo Marketplace e crie o banco. Use a URL de conexão com pooler.
+3. Em Settings, Environment Variables, cadastre:
+   - `DATABASE_URL`: a URL do Neon (com pooler);
+   - `SESSION_SECRET`: texto ASCII com pelo menos 32 bytes. Cadastre só no painel da Vercel; não grave em arquivo versionado.
+4. Baixe as variáveis para o ambiente local: `vercel env pull`.
+5. Crie as tabelas: `npm run migrate`.
+6. Crie o primeiro administrador, com a senha escolhida pelo dono (mínimo de 8 caracteres):
+   `ADMIN_EMAIL=dono@exemplo.com ADMIN_PASSWORD=sua-senha npm run seed`
+7. Publique: `vercel deploy --prod`.
+
+`scripts/seed-outubro.js` carrega os dados de outubro/2026 e serve só para conferência em um banco de teste. Não rode no banco de produção.
+
+Observação: o primeiro mês sugerido pelo app usa o mês em UTC. Perto do fim do mês (depois de 21h no horário de Brasília do dia 31) ele já pode sugerir o mês seguinte. Abra outubro antes disso ou use o seed.
+
+## Documentação
 
 Especificação e plano: `docs/superpowers/specs/` e `docs/superpowers/plans/`.
