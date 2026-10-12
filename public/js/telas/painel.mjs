@@ -1,5 +1,6 @@
 import { h, moeda, corSaldo, confirmar, toast } from '../ui.mjs';
 import { api } from '../api.mjs';
+import { nomeDoMes } from '../cobranca.mjs';
 import { escolherYm, seletorMes, rotuloLancamento } from './seletor-mes.mjs';
 
 const dm = (iso) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
@@ -16,15 +17,17 @@ export async function render(estado) {
   const proximos = v.lancamentos.filter((l) => l.status === 'A_PAGAR').slice(0, 3);
 
   const fechar = async () => {
-    if (!(await confirmar(`Fechar ${ym}? Os aportes serão calculados e o mês fica somente leitura.`, 'Fechar mês'))) return;
-    try { await api('POST', `/api/meses/${ym}/fechar`, {}); }
-    catch (e) {
-      if (e.dados && e.dados.diferenca_centavos !== undefined) {
+    const mes = nomeDoMes(ym);
+    if (!(await confirmar(`Fechar ${mes}? Os aportes serão calculados e o mês fica somente leitura.`, 'Fechar mês'))) return;
+    try {
+      try { await api('POST', `/api/meses/${ym}/fechar`, {}); }
+      catch (e) {
+        if (!e.dados || e.dados.diferenca_centavos === undefined) throw e;
         if (!(await confirmar(`${e.message} Diferença: R$ ${moeda(e.dados.diferenca_centavos)}.`, 'Fechar assim mesmo'))) return;
         await api('POST', `/api/meses/${ym}/fechar`, { confirmar_diferenca: true });
-      } else { return toast(e.message); }
-    }
-    toast('Mês fechado'); window.dispatchEvent(new Event('hashchange'));
+      }
+    } catch (e) { return toast(e.message); }
+    toast(`${mes} fechado`); window.dispatchEvent(new Event('hashchange'));
   };
 
   return h('div', {},
