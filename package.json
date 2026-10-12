@@ -2,11 +2,12 @@
   "name": "acertos-patroni",
   "version": "0.1.0",
   "private": true,
-  "engines": { "node": ">=22" },
+  "engines": { "node": ">=22.15" },
   "scripts": {
     "test": "node --test \"test/**/*.test.js\"",
-    "migrate": "node --use-system-ca scripts/migrate.js",
-    "seed": "node --use-system-ca scripts/seed.js",
+    "migrate": "node --use-system-ca --env-file-if-exists=.env.local scripts/migrate.js",
+    "seed": "node --use-system-ca --env-file-if-exists=.env.local scripts/seed.js",
+    "seed:outubro": "node --use-system-ca --env-file-if-exists=.env.local scripts/seed-outubro.js",
     "dev:local": "node scripts/dev-local.js",
     "icons": "node scripts/gen-icons.js",
     "dev": "vercel dev"
