@@ -22,7 +22,10 @@ export async function render(estado) {
   const dialogo = (titulo, campos, aoSalvar) => {
     const d = h('dialog', {}, h('h3', {}, titulo), ...campos,
       h('div', { class: 'acoes' }, h('button', { class: 'sec', onclick: () => d.close() }, 'Cancelar'),
-        h('button', { onclick: async () => { try { await aoSalvar(); d.close(); recarregar(); } catch (e) { toast(e.message); } } }, 'Salvar')));
+        h('button', { onclick: async (ev) => {
+          const b = ev.currentTarget; b.disabled = true;
+          try { await aoSalvar(); d.close(); recarregar(); } catch (e) { toast(e.message); b.disabled = false; }
+        } }, 'Salvar')));
     d.addEventListener('close', () => d.remove());
     document.body.append(d); d.showModal();
   };
@@ -35,7 +38,7 @@ export async function render(estado) {
   };
   const editarSocio = (s) => {
     const nome = h('input', { value: s.nome });
-    const usu = h('select', {}, h('option', { value: '' }, '(sem acesso ao app)'), usuarios.filter((u) => u.ativo).map((u) => h('option', { value: u.id, selected: u.id === s.usuario_id }, u.nome)));
+    const usu = h('select', {}, h('option', { value: '' }, '(sem acesso ao app)'), usuarios.filter((u) => u.ativo || u.id === s.usuario_id).map((u) => h('option', { value: u.id, selected: u.id === s.usuario_id }, u.ativo ? u.nome : `${u.nome} (inativo)`)));
     dialogo(`Editar ${s.nome}`, [h('label', {}, 'Nome'), nome, h('label', {}, 'Usuário vinculado'), usu],
       () => api('PUT', `/api/socios/${s.id}`, { nome: nome.value, usuario_id: usu.value ? Number(usu.value) : null }));
   };

@@ -12,7 +12,10 @@ export async function render(estado) {
   const dialogo = (titulo, campos, aoSalvar) => {
     const d = h('dialog', {}, h('h3', {}, titulo), ...campos,
       h('div', { class: 'acoes' }, h('button', { class: 'sec', onclick: () => d.close() }, 'Cancelar'),
-        h('button', { onclick: async () => { try { await aoSalvar(); d.close(); recarregar(); } catch (e) { toast(e.message); } } }, 'Salvar')));
+        h('button', { onclick: async (ev) => {
+          const b = ev.currentTarget; b.disabled = true;
+          try { await aoSalvar(); d.close(); recarregar(); } catch (e) { toast(e.message); b.disabled = false; }
+        } }, 'Salvar')));
     d.addEventListener('close', () => d.remove());
     document.body.append(d); d.showModal();
   };
