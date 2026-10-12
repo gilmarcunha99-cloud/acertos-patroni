@@ -14,6 +14,16 @@ export function h(tag, props = {}, ...filhos) {
   return el;
 }
 
+export function campoSenha(input) {
+  const botao = h('button', { type: 'button', class: 'mostrar-senha', 'aria-pressed': 'false', onclick: () => {
+    const visivel = input.type === 'password';
+    input.type = visivel ? 'text' : 'password';
+    botao.textContent = visivel ? 'Ocultar' : 'Mostrar';
+    botao.setAttribute('aria-pressed', String(visivel));
+  } }, 'Mostrar');
+  return h('div', { class: 'campo-senha' }, input, botao);
+}
+
 export const moeda = (c) => formatBRL(c);
 export const corSaldo = (c) => (c < 0 ? 'neg' : '');
 

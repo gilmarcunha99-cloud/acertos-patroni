@@ -17,6 +17,8 @@ button,.btn{font:inherit;border:0;border-radius:8px;padding:12px 14px;background
 button.sec{background:#e6edf7;color:var(--azul)}button.perigo{background:var(--neg)}
 button.largo{width:100%}
 input,select,textarea{font:inherit;width:100%;padding:11px;border:1px solid var(--linha);border-radius:8px;background:#fff;min-height:44px}
+.campo-senha{position:relative}.campo-senha input{padding-right:84px}
+.mostrar-senha{position:absolute;right:4px;top:4px;min-height:36px;padding:6px 12px;background:#e6edf7;color:var(--azul);font-size:14px}
 label{display:block;font-size:13px;color:var(--suave);margin:10px 0 4px}
 .barra{height:8px;border-radius:4px;background:#dfe6f1;overflow:hidden}.barra b{display:block;height:100%;background:var(--azul)}
 #nav{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-around;background:#fff;border-top:1px solid var(--linha);padding:6px 0 calc(6px + env(safe-area-inset-bottom))}
