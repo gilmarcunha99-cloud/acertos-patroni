@@ -1,0 +1,22 @@
+{
+  "name": "acertos-patroni",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.js\"",
+    "migrate": "node --use-system-ca scripts/migrate.js",
+    "seed": "node --use-system-ca scripts/seed.js",
+    "icons": "node scripts/gen-icons.js",
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.5"
+  },
+  "devDependencies": {
+    "pg-mem": "^3.0.2",
+    "sharp": "^0.33.4"
+  }
+}
