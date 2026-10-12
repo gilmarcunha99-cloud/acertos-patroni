@@ -27,7 +27,17 @@ function montarNav(ativa) {
   }
 }
 
+let rotando = false;
+let pendente = false;
 async function rotear() {
+  if (rotando) { pendente = true; return; }
+  rotando = true;
+  try {
+    do { pendente = false; await rotearUma(); } while (pendente);
+  } finally { rotando = false; }
+}
+
+async function rotearUma() {
   const app = document.getElementById('app');
   if (!estado.user) {
     try { estado.user = await api('GET', '/api/me'); } catch { estado.user = null; }
@@ -61,6 +71,7 @@ async function rotear() {
 
 window.addEventListener('hashchange', rotear);
 window.addEventListener('sessao-expirada', async () => {
+  if (!estado.user) return;
   try { await caches.delete('api'); } catch { /* sem cache */ }
   estado.user = null; rotear();
 });

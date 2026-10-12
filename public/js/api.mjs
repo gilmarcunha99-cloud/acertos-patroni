@@ -6,7 +6,7 @@ export async function api(method, path, body) {
   });
   let json = null;
   try { json = await r.json(); } catch { /* sem corpo */ }
-  if (r.status === 401 && path !== '/api/login') window.dispatchEvent(new Event('sessao-expirada'));
+  if (r.status === 401 && !['/api/login', '/api/me', '/api/logout'].includes(path)) window.dispatchEvent(new Event('sessao-expirada'));
   if (!r.ok) {
     const e = new Error((json && json.erro) || 'Não foi possível concluir. Tente de novo.');
     e.dados = json; e.status = r.status;
