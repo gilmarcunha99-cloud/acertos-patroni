@@ -49,3 +49,15 @@ test('excluir: apaga sem histórico, inativa com histórico', async () => {
   await app.call('POST', '/api/percentuais', { vigente_desde: '2026-10', itens: itens(ids, [2500, 3000, 2500, 2000]) }, ca);
   assert.deepStrictEqual((await app.call('DELETE', `/api/socios/${ids.Luiz}`, null, ca)).json, { inativado: true });
 });
+test('percentuais: rejeita sócio inexistente, inativo e item nulo', async () => {
+  const { app, ca, ids } = await cenario();
+  const base = itens(ids, [2500, 3000, 2500, 2000]);
+  const extra = await app.call('POST', '/api/percentuais', { vigente_desde: '2026-10', itens: [...base, { socio_id: 99999, bp: 0 }] }, ca);
+  assert.strictEqual(extra.status, 400);
+  const inativo = (await app.call('POST', '/api/socios', { nome: 'Inativo' }, ca)).json.id;
+  await app.call('PUT', `/api/socios/${inativo}`, { ativo: false }, ca);
+  const comInativo = await app.call('POST', '/api/percentuais', { vigente_desde: '2026-10', itens: [...base, { socio_id: inativo, bp: 0 }] }, ca);
+  assert.strictEqual(comInativo.status, 400);
+  const nulo = await app.call('POST', '/api/percentuais', { vigente_desde: '2026-10', itens: [...base, null] }, ca);
+  assert.strictEqual(nulo.status, 400);
+});

@@ -46,10 +46,12 @@ add('DELETE', '/api/socios/:id', { role: 'ADMIN' }, async ({ params }) => {
 add('POST', '/api/percentuais', { role: 'ADMIN' }, async ({ body }) => {
   if (!ymValido(body.vigente_desde)) fail(400, 'Informe o mês de início (AAAA-MM).');
   const itens = Array.isArray(body.itens) ? body.itens : [];
-  if (!itens.every((i) => Number.isInteger(i.bp) && i.bp >= 0)) fail(400, 'Percentual inválido.');
+  if (!itens.every((i) => i && typeof i === 'object' && Number.isInteger(i.bp) && i.bp >= 0)) fail(400, 'Percentual inválido.');
   const ativos = await query('SELECT id FROM socio WHERE ativo');
   const ids = new Set(itens.map((i) => i.socio_id));
   if (ativos.some((s) => !ids.has(s.id)) || ids.size !== itens.length) fail(400, 'Informe o percentual de todos os sócios ativos.');
+  const ativosIds = new Set(ativos.map((s) => s.id));
+  if (itens.some((i) => !ativosIds.has(i.socio_id))) fail(400, 'Há sócios inexistentes ou inativos na lista.');
   if (!somaValida(itens)) fail(400, 'Os percentuais precisam somar 100%.');
   const [f] = await query("SELECT max(ym) AS ym FROM mes WHERE status = 'FECHADO'");
   if (f.ym && body.vigente_desde <= f.ym) fail(409, 'Esse mês já está fechado. Escolha um mês posterior.');
