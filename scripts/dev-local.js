@@ -113,8 +113,8 @@ async function main() {
     }
   });
   const porta = Number(process.env.PORT) || 3000;
-  servidor.listen(porta, () => {
-    console.log(`Servidor local em http://localhost:${porta} (banco em memória; credenciais em .env.dev-local)`);
+  servidor.listen(porta, '127.0.0.1', () => {
+    console.log(`Servidor local em http://127.0.0.1:${porta} (banco em memória; credenciais em .env.dev-local)`);
   });
 }
 
