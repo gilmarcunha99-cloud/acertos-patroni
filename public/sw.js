@@ -1,4 +1,4 @@
-const SHELL = 'shell-v2';
+const SHELL = 'shell-v3';
 const API = 'api';
 const ARQUIVOS = ['/', '/style.css', '/manifest.webmanifest', '/js/app.mjs', '/js/api.mjs', '/js/ui.mjs', '/js/money.mjs', '/js/cobranca.mjs'];
 
@@ -10,7 +10,7 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== location.origin) return;
   if (url.pathname.startsWith('/api/')) {
-    if (!/^\/api\/(meses|socios)/.test(url.pathname)) return;
+    if (!/^\/api\/(me|meses|socios)/.test(url.pathname)) return;
     e.respondWith(fetch(req).then((r) => {
       if (r.ok) { const c = r.clone(); e.waitUntil(caches.open(API).then((ca) => ca.put(req, c))); }
       return r;
