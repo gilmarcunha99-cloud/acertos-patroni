@@ -1,4 +1,4 @@
-import { h } from './ui.mjs';
+import { h, toast } from './ui.mjs';
 import { api } from './api.mjs';
 
 const estado = { user: null, ym: null, irPara: (hash) => { location.hash = hash; } };
@@ -44,7 +44,7 @@ async function rotear() {
       h('a', { class: 'btn largo card', href: '#/socios' }, 'Sócios e percentuais'),
       h('a', { class: 'btn largo card', href: '#/usuarios' }, 'Usuários'),
       h('button', { class: 'sec largo', onclick: async () => {
-        await api('POST', '/api/logout');
+        try { await api('POST', '/api/logout'); } catch { toast('Não foi possível sair. Verifique a conexão.'); return; }
         try { await caches.delete('api'); } catch { /* sem cache */ }
         estado.user = null; location.hash = '#/'; rotear();
       } }, 'Sair')));
@@ -60,6 +60,9 @@ async function rotear() {
 }
 
 window.addEventListener('hashchange', rotear);
-window.addEventListener('sessao-expirada', () => { estado.user = null; rotear(); });
+window.addEventListener('sessao-expirada', async () => {
+  try { await caches.delete('api'); } catch { /* sem cache */ }
+  estado.user = null; rotear();
+});
 rotear();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});

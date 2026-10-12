@@ -28,7 +28,7 @@ export function confirmar(msg, rotulo = 'Confirmar') {
     const d = h('dialog', {}, h('p', {}, msg), h('div', { class: 'acoes' },
       h('button', { class: 'sec', onclick: () => { d.close(); resolve(false); } }, 'Cancelar'),
       h('button', { onclick: () => { d.close(); resolve(true); } }, rotulo)));
-    d.addEventListener('close', () => d.remove());
+    d.addEventListener('close', () => { d.remove(); resolve(false); });
     document.body.append(d);
     d.showModal();
   });

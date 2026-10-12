@@ -8,6 +8,7 @@ export async function render(estado) {
     ev.preventDefault();
     try {
       estado.user = await api('POST', '/api/login', { email: email.value, senha: senha.value });
+      try { await caches.delete('api'); } catch { /* sem cache */ }
       estado.irPara('#/painel');
     } catch (e) { toast(e.message); }
   } },
