@@ -3,7 +3,7 @@ const { query, tx } = require('../lib/db');
 const { carregarVisao } = require('../lib/mesdb');
 const { proximoYm } = require('../lib/datas');
 const { proximosLancamentos } = require('../lib/abertura');
-const { ymValido } = require('../lib/validacao');
+const { ymValido, centavosValido } = require('../lib/validacao');
 
 add('GET', '/api/meses', { role: 'AUTH' }, async () => {
   const meses = await query('SELECT ym, status, saldo_inicial_centavos FROM mes ORDER BY ym DESC');
@@ -26,6 +26,7 @@ add('POST', '/api/meses/abrir', { role: 'ADMIN' }, async ({ body }) => {
   let saldoInicial; let copiar = [];
   if (!ult) {
     if (!Number.isInteger(body.saldo_inicial_centavos)) fail(400, 'Informe o saldo inicial do banco.');
+    if (!centavosValido(body.saldo_inicial_centavos)) fail(400, 'Valor fora do limite.');
     saldoInicial = body.saldo_inicial_centavos;
   } else {
     if (ult.status !== 'FECHADO') fail(409, 'Feche o mês anterior antes de abrir o próximo.');
@@ -52,6 +53,7 @@ add('PUT', '/api/meses/:ym/saldo-inicial', { role: 'ADMIN' }, async ({ params, b
   if (!m) fail(404, 'Mês não encontrado.');
   if (m.status === 'FECHADO') fail(409, 'Mês fechado. Reabra para editar.');
   if (!Number.isInteger(body.saldo_inicial_centavos)) fail(400, 'Informe um valor válido.');
+  if (!centavosValido(body.saldo_inicial_centavos)) fail(400, 'Valor fora do limite.');
   await query('UPDATE mes SET saldo_inicial_centavos = $1 WHERE ym = $2', [body.saldo_inicial_centavos, params.ym]);
   return ok({ ok: true });
 });

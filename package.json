@@ -2,7 +2,7 @@
   "name": "acertos-patroni",
   "version": "0.1.0",
   "private": true,
-  "engines": { "node": ">=20" },
+  "engines": { "node": ">=22" },
   "scripts": {
     "test": "node --test \"test/**/*.test.js\"",
     "migrate": "node --use-system-ca scripts/migrate.js",

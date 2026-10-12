@@ -1,7 +1,7 @@
 const { add, ok, fail } = require('../lib/router');
 const { query, tx } = require('../lib/db');
 const { carregarVisao } = require('../lib/mesdb');
-const { ymValido } = require('../lib/validacao');
+const { ymValido, centavosValido } = require('../lib/validacao');
 const { vigentes, somaValida } = require('../lib/percentuais');
 
 add('PUT', '/api/meses/:ym/aportes/:socioId', { role: 'ADMIN' }, async ({ params, body }) => {
@@ -21,6 +21,7 @@ add('PUT', '/api/meses/:ym/aportes/:socioId', { role: 'ADMIN' }, async ({ params
   if (body.status !== undefined) fail(409, 'O aporte só pode ser marcado como pago depois de fechar o mês.');
   const ajuste = body.ajuste_centavos === undefined ? 0 : body.ajuste_centavos;
   if (!Number.isInteger(ajuste)) fail(400, 'Informe um valor válido para o acerto.');
+  if (!centavosValido(ajuste)) fail(400, 'Valor fora do limite.');
   if (ajuste !== 0) {
     if (!String(body.ajuste_motivo || '').trim()) fail(400, 'Informe o motivo do acerto.');
     if (!ymValido(body.ajuste_origem)) fail(400, 'Informe o mês de origem do acerto (AAAA-MM).');
