@@ -1,4 +1,4 @@
-import { h, moeda, caixaData, icone } from '../ui.mjs';
+import { h, moeda, caixaData, icone, toast } from '../ui.mjs';
 import { api } from '../api.mjs';
 import { escolherYm, seletorMes, rotuloLancamento } from './seletor-mes.mjs';
 
@@ -10,7 +10,26 @@ export async function render(estado) {
   const ym = escolherYm(estado, meses);
   if (!ym) return h('div', { class: 'card' }, 'Nenhum mês aberto ainda.');
   const v = await api('GET', `/api/meses/${ym}`);
-  const admin = estado.user.perfil === 'ADMIN' && v.status === 'ABERTO';
+  const ehAdmin = estado.user.perfil === 'ADMIN';
+  const admin = ehAdmin && v.status === 'ABERTO';
+  // Pagar vale em qualquer mês (inclusive fechado); editar o resto, só no aberto.
+  const OPOSTA = { A_PAGAR: 'PAGO', PAGO: 'A_PAGAR', A_RECEBER: 'RECEBIDO', RECEBIDO: 'A_RECEBER' };
+  const situacao = (l) => {
+    const [txt, cls] = ROTULO[l.status];
+    if (!ehAdmin) return h('span', { class: `tag ${cls}` }, txt);
+    const nova = OPOSTA[l.status];
+    return h('button', { type: 'button', class: `tag ${cls} tag-botao`,
+      'aria-label': `${rotuloLancamento(l)}: ${txt}. Tocar para marcar como ${ROTULO[nova][0]}`,
+      onclick: async (ev) => {
+        ev.stopPropagation();
+        ev.currentTarget.disabled = true;
+        try {
+          await api('PUT', `/api/lancamentos/${l.id}/situacao`, { status: nova });
+          toast(`${rotuloLancamento(l)}: ${ROTULO[nova][0]}`);
+          window.dispatchEvent(new Event('hashchange'));
+        } catch (e) { toast(e.message); ev.currentTarget.disabled = false; }
+      } }, txt);
+  };
   let filtro = 'TODOS';
   const lista = h('div', { class: 'card lista' });
 
@@ -28,9 +47,8 @@ export async function render(estado) {
       linha({ data: `${ym}-01`, titulo: 'Saldo do banco', tags: [h('span', { class: 'tag' }, 'saldo inicial')],
         valor: moeda(v.saldo_inicial_centavos), saldo: null }),
       ...v.lancamentos.filter((l) => filtro === 'TODOS' || l.tipo === filtro).map((l) => {
-        const [txt, cls] = ROTULO[l.status];
         return linha({ data: l.vencimento, titulo: rotuloLancamento(l),
-          tags: [h('span', { class: 'tag' }, FORMA[l.forma] || l.forma), h('span', { class: `tag ${cls}` }, txt)],
+          tags: [h('span', { class: 'tag' }, FORMA[l.forma] || l.forma), situacao(l)],
           valor: (l.tipo === 'CREDITO' ? '+' : '') + moeda(l.valor_centavos), saldo: l.saldo_centavos, credito: l.tipo === 'CREDITO',
           abrir: admin ? () => { location.hash = `#/lancamento/${l.id}`; } : null });
       }),

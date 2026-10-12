@@ -16,6 +16,7 @@ const ROTAS = [
   ['POST', '/api/meses/2026-10/lancamentos'],
   ['PUT', '/api/lancamentos/1'],
   ['DELETE', '/api/lancamentos/1'],
+  ['PUT', '/api/lancamentos/1/situacao'],
   ['PUT', '/api/meses/2026-10/aportes/1'],
   ['POST', '/api/meses/2026-10/fechar'],
   ['POST', '/api/meses/2026-10/reabrir'],
