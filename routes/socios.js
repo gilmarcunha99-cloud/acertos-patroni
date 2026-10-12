@@ -47,15 +47,23 @@ add('POST', '/api/percentuais', { role: 'ADMIN' }, async ({ body }) => {
   if (!ymValido(body.vigente_desde)) fail(400, 'Informe o mês de início (AAAA-MM).');
   const itens = Array.isArray(body.itens) ? body.itens : [];
   if (!itens.every((i) => i && typeof i === 'object' && Number.isInteger(i.bp) && i.bp >= 0)) fail(400, 'Percentual inválido.');
-  const ativos = await query('SELECT id FROM socio WHERE ativo');
+  const todos = await query('SELECT id, ativo FROM socio');
+  const porId = new Map(todos.map((s) => [s.id, s]));
   const ids = new Set(itens.map((i) => i.socio_id));
-  if (ativos.some((s) => !ids.has(s.id)) || ids.size !== itens.length) fail(400, 'Informe o percentual de todos os sócios ativos.');
-  const ativosIds = new Set(ativos.map((s) => s.id));
-  if (itens.some((i) => !ativosIds.has(i.socio_id))) fail(400, 'Há sócios inexistentes ou inativos na lista.');
+  if (ids.size !== itens.length) fail(400, 'Sócio repetido na lista.');
+  if (itens.some((i) => !porId.has(i.socio_id))) fail(400, 'Há sócios inexistentes ou inativos na lista.');
+  if (todos.some((s) => s.ativo && !ids.has(s.id))) fail(400, 'Informe o percentual de todos os sócios ativos.');
+  if (itens.some((i) => !porId.get(i.socio_id).ativo && i.bp > 0)) fail(400, 'Há sócios inexistentes ou inativos na lista.');
   if (!somaValida(itens)) fail(400, 'Os percentuais precisam somar 100%.');
   const [f] = await query("SELECT max(ym) AS ym FROM mes WHERE status = 'FECHADO'");
   if (f.ym && body.vigente_desde <= f.ym) fail(409, 'Esse mês já está fechado. Escolha um mês posterior.');
+  const hist = await query('SELECT socio_id, vigente_desde, bp FROM socio_percentual');
+  const retirados = vigentes(hist, body.vigente_desde).filter((v) => !ids.has(v.socio_id));
   await tx(async (q) => {
+    for (const r of retirados) {
+      await q('DELETE FROM socio_percentual WHERE socio_id = $1 AND vigente_desde = $2', [r.socio_id, body.vigente_desde]);
+      await q('INSERT INTO socio_percentual (socio_id, vigente_desde, bp) VALUES ($1, $2, 0)', [r.socio_id, body.vigente_desde]);
+    }
     for (const i of itens) {
       await q('DELETE FROM socio_percentual WHERE socio_id = $1 AND vigente_desde = $2', [i.socio_id, body.vigente_desde]);
       await q('INSERT INTO socio_percentual (socio_id, vigente_desde, bp) VALUES ($1, $2, $3)', [i.socio_id, body.vigente_desde, i.bp]);

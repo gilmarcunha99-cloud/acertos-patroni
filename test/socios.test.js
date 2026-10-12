@@ -49,15 +49,65 @@ test('excluir: apaga sem histórico, inativa com histórico', async () => {
   await app.call('POST', '/api/percentuais', { vigente_desde: '2026-10', itens: itens(ids, [2500, 3000, 2500, 2000]) }, ca);
   assert.deepStrictEqual((await app.call('DELETE', `/api/socios/${ids.Luiz}`, null, ca)).json, { inativado: true });
 });
-test('percentuais: rejeita sócio inexistente, inativo e item nulo', async () => {
+test('percentuais: rejeita sócio inexistente, inativo com bp > 0 e item nulo; inativo com bp 0 passa', async () => {
   const { app, ca, ids } = await cenario();
   const base = itens(ids, [2500, 3000, 2500, 2000]);
   const extra = await app.call('POST', '/api/percentuais', { vigente_desde: '2026-10', itens: [...base, { socio_id: 99999, bp: 0 }] }, ca);
   assert.strictEqual(extra.status, 400);
   const inativo = (await app.call('POST', '/api/socios', { nome: 'Inativo' }, ca)).json.id;
   await app.call('PUT', `/api/socios/${inativo}`, { ativo: false }, ca);
-  const comInativo = await app.call('POST', '/api/percentuais', { vigente_desde: '2026-10', itens: [...base, { socio_id: inativo, bp: 0 }] }, ca);
-  assert.strictEqual(comInativo.status, 400);
+  const comBp = await app.call('POST', '/api/percentuais', { vigente_desde: '2026-10', itens: [...base, { socio_id: inativo, bp: 100 }] }, ca);
+  assert.strictEqual(comBp.status, 400);
+  const comZero = await app.call('POST', '/api/percentuais', { vigente_desde: '2026-10', itens: [...base, { socio_id: inativo, bp: 0 }] }, ca);
+  assert.strictEqual(comZero.status, 200);
   const nulo = await app.call('POST', '/api/percentuais', { vigente_desde: '2026-10', itens: [...base, null] }, ca);
   assert.strictEqual(nulo.status, 400);
+});
+
+async function mesComDebito(app, ca, ym, saldo) {
+  const body = saldo === undefined ? { ym } : { ym, saldo_inicial_centavos: saldo };
+  assert.strictEqual((await app.call('POST', '/api/meses/abrir', body, ca)).status, 201);
+  await app.call('POST', `/api/meses/${ym}/lancamentos`, { tipo: 'DEBITO', descritivo: 'Conta', valor_centavos: 100000, vencimento: `${ym}-15`, forma: 'BOLETO' }, ca);
+}
+
+test('retirar sócio zera o percentual e o mês seguinte fecha', async () => {
+  const app = await criarApp();
+  await app.criarUsuario({ email: 'a@x.com', perfil: 'ADMIN' });
+  const ca = await app.login('a@x.com');
+  const ids = {};
+  for (const n of ['A', 'B', 'C']) ids[n] = (await app.call('POST', '/api/socios', { nome: n }, ca)).json.id;
+  await app.call('POST', '/api/percentuais', { vigente_desde: '2026-10', itens: itens(ids, [5000, 3000, 2000]) }, ca);
+  await mesComDebito(app, ca, '2026-10', 0);
+  assert.strictEqual((await app.call('POST', '/api/meses/2026-10/fechar', {}, ca)).status, 200);
+  assert.deepStrictEqual((await app.call('DELETE', `/api/socios/${ids.C}`, null, ca)).json, { inativado: true });
+  await mesComDebito(app, ca, '2026-11');
+  const r = await app.call('POST', '/api/percentuais', { vigente_desde: '2026-11', itens: [{ socio_id: ids.A, bp: 6000 }, { socio_id: ids.B, bp: 4000 }] }, ca);
+  assert.strictEqual(r.status, 200);
+  const f = await app.call('POST', '/api/meses/2026-11/fechar', {}, ca);
+  assert.strictEqual(f.status, 200);
+  const v = (await app.call('GET', '/api/meses/2026-11', null, ca)).json;
+  assert.deepStrictEqual(v.aportes.map((a) => a.socio_id), [ids.A, ids.B]);
+  const out = (await app.call('GET', '/api/meses/2026-10', null, ca)).json;
+  assert.strictEqual(out.aportes.length, 3);
+});
+
+test('vigência ponta a ponta: mês fechado não muda, o seguinte usa os novos percentuais', async () => {
+  const app = await criarApp();
+  await app.criarUsuario({ email: 'a@x.com', perfil: 'ADMIN' });
+  const ca = await app.login('a@x.com');
+  const ids = {};
+  for (const n of ['A', 'B']) ids[n] = (await app.call('POST', '/api/socios', { nome: n }, ca)).json.id;
+  await app.call('POST', '/api/percentuais', { vigente_desde: '2026-10', itens: itens(ids, [5000, 5000]) }, ca);
+  await mesComDebito(app, ca, '2026-10', 0);
+  await app.call('POST', '/api/meses/2026-10/fechar', {}, ca);
+  const antes = (await app.call('GET', '/api/meses/2026-10', null, ca)).json.aportes.map((a) => [a.bp, a.base_centavos, a.final_centavos]);
+  assert.deepStrictEqual(antes, [[5000, 50000, 50000], [5000, 50000, 50000]]);
+  assert.strictEqual((await app.call('POST', '/api/percentuais', { vigente_desde: '2026-11', itens: itens(ids, [7000, 3000]) }, ca)).status, 200);
+  await mesComDebito(app, ca, '2026-11');
+  await app.call('POST', '/api/meses/2026-11/fechar', {}, ca);
+  const depoisOut = (await app.call('GET', '/api/meses/2026-10', null, ca)).json.aportes.map((a) => [a.bp, a.base_centavos, a.final_centavos]);
+  assert.deepStrictEqual(depoisOut, antes);
+  const nov = (await app.call('GET', '/api/meses/2026-11', null, ca)).json.aportes;
+  assert.deepStrictEqual(nov.map((a) => a.bp), [7000, 3000]);
+  assert.deepStrictEqual(nov.map((a) => a.final_centavos), [70000, 30000]);
 });
