@@ -1,6 +1,34 @@
 import { h, toast, icone } from './ui.mjs';
 import { api } from './api.mjs';
 import { botaoInstalar } from './instalar.mjs';
+import { digitalDisponivel, ativarDigital, removerDigitalDoAparelho, credencialDoAparelho, pularTrava, foiCancelado } from './digital.mjs';
+
+// Cartão "Digital neste aparelho" da tela Mais. Só aparece se o aparelho tem
+// leitor (digital, rosto ou PIN de tela) e o endereço é https.
+function cartaoDigital() {
+  const lugar = h('div', {});
+  const desenhar = async () => {
+    if (!(await digitalDisponivel())) return lugar.replaceChildren();
+    let ativa = false;
+    const id = credencialDoAparelho();
+    if (id) { try { ativa = (await api('GET', '/api/passkey')).some((p) => p.credencial_id === id); } catch { ativa = true; } }
+    const acao = async (ev, fn, ok) => {
+      ev.currentTarget.disabled = true;
+      try { await fn(); toast(ok); } catch (e) { if (!foiCancelado(e)) toast(e.message || 'Não foi possível concluir.'); }
+      desenhar();
+    };
+    lugar.replaceChildren(h('div', { class: 'card digital-card' },
+      h('div', { class: 'tags' }, h('b', {}, 'Entrar com digital'), h('span', { class: `tag ${ativa ? 'ok' : ''}` }, ativa ? 'ativa neste aparelho' : 'desligada')),
+      h('span', { class: 'suave' }, ativa
+        ? 'Ao abrir o app, ele pede a digital. A senha continua valendo.'
+        : 'Entre sem digitar login e senha, usando a digital (ou o rosto) deste celular.'),
+      ativa
+        ? h('button', { class: 'sec largo', onclick: (ev) => acao(ev, removerDigitalDoAparelho, 'Digital removida deste aparelho') }, 'Remover digital deste aparelho')
+        : h('button', { class: 'largo', onclick: (ev) => acao(ev, ativarDigital, 'Digital ativada') }, icone('digital', 22), 'Ativar digital neste aparelho')));
+  };
+  desenhar();
+  return lugar;
+}
 
 const estado = { user: null, ym: null, irPara: (hash) => { location.hash = hash; } };
 try { estado.ym = localStorage.getItem('ym'); } catch { /* sem storage */ }
@@ -58,9 +86,11 @@ async function rotearUma() {
         h('div', { class: 'suave' }, estado.user.perfil === 'ADMIN' ? 'Administrador' : 'Sócio · somente consulta')),
       estado.user.perfil === 'ADMIN' ? item('#/socios', 'socios', 'Sócios e percentuais') : null,
       estado.user.perfil === 'ADMIN' ? item('#/usuarios', 'usuario', 'Usuários') : null,
+      cartaoDigital(),
       botaoInstalar(),
       h('button', { class: 'sec largo', style: 'margin-top:12px', onclick: async () => {
         try { await api('POST', '/api/logout'); } catch { toast('Não foi possível sair. Verifique a conexão.'); return; }
+        pularTrava();
         try { await caches.delete('api'); } catch { /* sem cache */ }
         estado.user = null; location.hash = '#/'; rotear();
       } }, icone('sair', 20), 'Sair')));

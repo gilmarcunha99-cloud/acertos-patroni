@@ -22,7 +22,8 @@ const senhaAleatoria = () => crypto.randomBytes(12).toString('base64').replace(/
 
 async function preparar() {
   const mem = newDb();
-  mem.public.none(fs.readFileSync(path.join(RAIZ, 'migrations/001_init.sql'), 'utf8'));
+  const dirMig = path.join(RAIZ, 'migrations');
+  for (const f of fs.readdirSync(dirMig).filter((n) => n.endsWith('.sql')).sort()) mem.public.none(fs.readFileSync(path.join(dirMig, f), 'utf8'));
   const { Pool } = mem.adapters.createPg();
   const db = require('../lib/db');
   db.setPool(new Pool());

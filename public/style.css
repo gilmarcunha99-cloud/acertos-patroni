@@ -212,3 +212,8 @@ dialog p { color: var(--cinza); line-height: 1.5; }
 .passos { margin: 4px 0 0; padding-left: 22px; line-height: 1.5; }
 .passos li + li { margin-top: 8px; }
 .instalar { margin-top: 12px; }
+
+/* Entrada por digital. */
+.lugar-digital:empty { display: none; }
+.lugar-digital .ou { margin: 14px 0 -10px; text-align: center; color: var(--cinza); font-size: 14px; }
+.digital-card { display: flex; flex-direction: column; gap: 10px; }

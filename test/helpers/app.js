@@ -8,12 +8,15 @@ process.env.SESSION_SECRET = 'segredo-de-teste';
 
 async function criarApp() {
   const mem = newDb();
-  mem.public.none(fs.readFileSync(path.join(__dirname, '../../migrations/001_init.sql'), 'utf8'));
+  const dirMig = path.join(__dirname, '../../migrations');
+  for (const f of fs.readdirSync(dirMig).filter((n) => n.endsWith('.sql')).sort()) mem.public.none(fs.readFileSync(path.join(dirMig, f), 'utf8'));
   const { Pool } = mem.adapters.createPg();
   db.setPool(new Pool());
   const { handle } = require('../../lib/app');
 
-  const call = (method, p, body, cookie) => handle({ method, path: p, body, headers: cookie ? { cookie } : {} });
+  // `extra`: cabeçalhos a mais (host e proto, para a origem do WebAuthn).
+  const call = (method, p, body, cookie, extra) =>
+    handle({ method, path: p, body, headers: { ...(cookie ? { cookie } : {}), ...(extra || {}) } });
   async function criarUsuario({ nome = 'Teste', email, senha = 'senha-de-teste', perfil = 'ADMIN' }) {
     const [u] = await db.query(
       'INSERT INTO usuario (nome, email, senha_hash, perfil) VALUES ($1,$2,$3,$4) RETURNING id',

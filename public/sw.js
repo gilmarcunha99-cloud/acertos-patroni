@@ -1,6 +1,6 @@
-const SHELL = 'shell-v5';
+const SHELL = 'shell-v6';
 const API = 'api';
-const ARQUIVOS = ['/', '/style.css', '/manifest.webmanifest', '/js/app.mjs', '/js/api.mjs', '/js/ui.mjs', '/js/money.mjs', '/js/cobranca.mjs', '/js/instalar.mjs', '/fonts/plus-jakarta-sans-latin-400-normal.woff2', '/fonts/plus-jakarta-sans-latin-600-normal.woff2', '/fonts/plus-jakarta-sans-latin-700-normal.woff2'];
+const ARQUIVOS = ['/', '/style.css', '/manifest.webmanifest', '/js/app.mjs', '/js/api.mjs', '/js/ui.mjs', '/js/money.mjs', '/js/cobranca.mjs', '/js/instalar.mjs', '/js/digital.mjs', '/fonts/plus-jakarta-sans-latin-400-normal.woff2', '/fonts/plus-jakarta-sans-latin-600-normal.woff2', '/fonts/plus-jakarta-sans-latin-700-normal.woff2'];
 
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(SHELL).then((c) => c.addAll(ARQUIVOS)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ns) => Promise.all(ns.filter((n) => n !== SHELL && n !== API).map((n) => caches.delete(n)))).then(() => self.clients.claim())); });
