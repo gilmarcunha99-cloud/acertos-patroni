@@ -1,5 +1,6 @@
 import { h, toast, icone } from './ui.mjs';
 import { api } from './api.mjs';
+import { botaoInstalar } from './instalar.mjs';
 
 const estado = { user: null, ym: null, irPara: (hash) => { location.hash = hash; } };
 try { estado.ym = localStorage.getItem('ym'); } catch { /* sem storage */ }
@@ -57,7 +58,8 @@ async function rotearUma() {
         h('div', { class: 'suave' }, estado.user.perfil === 'ADMIN' ? 'Administrador' : 'Sócio · somente consulta')),
       estado.user.perfil === 'ADMIN' ? item('#/socios', 'socios', 'Sócios e percentuais') : null,
       estado.user.perfil === 'ADMIN' ? item('#/usuarios', 'usuario', 'Usuários') : null,
-      h('button', { class: 'sec largo', onclick: async () => {
+      botaoInstalar(),
+      h('button', { class: 'sec largo', style: 'margin-top:12px', onclick: async () => {
         try { await api('POST', '/api/logout'); } catch { toast('Não foi possível sair. Verifique a conexão.'); return; }
         try { await caches.delete('api'); } catch { /* sem cache */ }
         estado.user = null; location.hash = '#/'; rotear();

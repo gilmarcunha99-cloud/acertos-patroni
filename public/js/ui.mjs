@@ -29,6 +29,7 @@ const TRACOS = {
   mais_sinal: ['M12 5v14', 'M5 12h14'],
   sair: ['M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3', 'M10 17l5-5-5-5', 'M15 12H4'],
   seta: ['M9 6l6 6-6 6'],
+  baixar: ['M12 3v12', 'M7 10l5 5 5-5', 'M5 21h14'],
 };
 
 export function icone(nome, tam = 24) {

@@ -207,3 +207,8 @@ dialog p { color: var(--cinza); line-height: 1.5; }
   body { background: #fff; padding: 0; } main { max-width: none; padding: 0; } .somente-impressao { display: block; }
   .card { border: 0; padding: 0; } .rolagem-planilha { overflow: visible; }
 }
+
+/* Passo a passo de instalação. */
+.passos { margin: 4px 0 0; padding-left: 22px; line-height: 1.5; }
+.passos li + li { margin-top: 8px; }
+.instalar { margin-top: 12px; }

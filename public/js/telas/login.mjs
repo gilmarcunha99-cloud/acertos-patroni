@@ -1,5 +1,6 @@
 import { h, toast, campoSenha, icone } from '../ui.mjs';
 import { api } from '../api.mjs';
+import { botaoInstalar } from '../instalar.mjs';
 
 export async function render(estado) {
   const email = h('input', { id: 'login', type: 'text', autocomplete: 'username', autocapitalize: 'none', autocorrect: 'off', spellcheck: 'false', required: true });
@@ -20,5 +21,6 @@ export async function render(estado) {
   return h('div', { class: 'entrada' },
     h('div', { class: 'marca' }, h('div', { class: 'marca-icone' }, icone('balanca', 26)), h('span', { class: 'marca-nome' }, 'Acertos Patroni')),
     h('div', {}, h('h2', {}, 'Entrar'), h('p', { class: 'sub' }, 'Acertos mensais entre os sócios')),
-    form);
+    form,
+    botaoInstalar());
 }
